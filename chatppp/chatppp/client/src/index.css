@@ -1,0 +1,14 @@
+body, html {
+    font-family: sans-serif;
+
+    --color-white: #F0F0F0;
+    --color-black: #050505;
+    --color-gray: #C0C0C0;
+    --color-primary: #8e2407;
+}
+
+.vanishing {
+    &:empty {
+        display: none;
+    }
+}
