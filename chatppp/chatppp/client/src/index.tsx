@@ -3,6 +3,12 @@ import type { ExpansionEntry } from "@effectualjs/reconciler/dist/expansion.mjs"
 
 import { App } from "./App.js";
 
+declare global {
+    interface HTMLCollection {
+        [Symbol.iterator]: () => Iterator<HTMLElement>;
+    }
+}
+
 const buildReconciliationLoop = (rootEl: HTMLElement) => {
     const root: RootHydrate = {
         kind: "root",

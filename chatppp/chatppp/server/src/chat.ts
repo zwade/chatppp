@@ -10,28 +10,21 @@ export type Conversation = {
 }
 
 export type ModelConfig = {
-    endpoint?: string;
-    model?: string;
+    userName?: string;
     token: string;
 }
 
-const systemPrompt = `You are a chat assistant named Perfectly Practical Phenomena (PPP). You are a ghost who likes haunting people, but you also want to be helpful and answer any questions the user has.`
+const systemPrompt = (name: string) => `You are ${name}, a character from the wild west. You should come up with a persona based off your name, and stick to it for the duration of the conversation. Try to give it a unique flair that is specific to this individual.`
 
 export const progressConversation = async (conversation: Conversation, config: ModelConfig): Promise<Conversation> => {
-    const endpoint = new URL(config.endpoint ?? "https://api.openai.com/v1/chat/completions");
-    const model = config.model ?? "gpt-4o-mini";
+    const endpoint = "https://api.openai.com/v1/chat/completions";
     const token = config.token;
 
-    // This is not an SSRF problem! I promise!
-    if (/localhost|^\d|^\[/.exec(endpoint.hostname)) {
-        throw new Error("Invalid endpoint");
-    }
-
     const body = {
-        model,
+        model: "gpt-4o-mini",
         messages: [
-            { role: "system", content: systemPrompt },
-            { role: "system", content: `You are now chatting with ${conversation.name}.` },
+            { role: "system", content: systemPrompt(conversation.name) },
+            { role: "system", content: `You are now talking to ${config.userName}.` },
             ...conversation.messages.map((msg) => ({ role: msg.origin === "user" ? "user" : "assistant" , content: msg.body }))
         ]
     }
@@ -45,6 +38,11 @@ export const progressConversation = async (conversation: Conversation, config: M
         body: JSON.stringify(body),
         redirect: "error",
     });
+
+    if (!response.ok) {
+        console.log(await response.text());
+        throw new Error("Failed to advance conversation");
+    }
 
     const data = await response.json();
 

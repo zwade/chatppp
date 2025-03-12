@@ -134,7 +134,7 @@ export const finalCleanup = (identity: SelfIdentity) => {
 
 export const reconcileEmits = (id: SelfIdentity, emits: Record<string, Function> | undefined) => {
     if (!emits) {
-        return;
+        return {};
     }
 
     if (!e.effectCache.has(id)) {

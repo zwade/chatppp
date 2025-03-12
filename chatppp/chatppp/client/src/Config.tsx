@@ -5,35 +5,32 @@ import { TextInput } from "./TextInput.js"
 import "./config.css";
 import { Button } from "./Button.js";
 
+export interface Props {
+    config: Partial<ModelConfig>;
+}
+
 export interface Ctx {
     emits: {
         close: () => void;
+        configChange: (config: Partial<ModelConfig>) => void;
     }
 }
 
-export const Config = (_: {}, ctx: Ctx) => {
-    const [config, setConfig] = $localStorage<Partial<ModelConfig>>("model-config", {})
-
+export const Config = (props: Props, ctx: Ctx) => {
     return (
         <div class="config-view">
             <form class="config-form" $on:submit={(e: SubmitEvent) => e.preventDefault()}>
                 <TextInput
-                    value={config?.endpoint}
-                    placeholder="https://api.openai.com/v1/chat/completions"
-                    $on:change={(value) => setConfig({ ...config, endpoint: value || undefined})}
-                    $slot:label="Endpoint"
+                    value={props.config.userName}
+                    placeholder="zwad3"
+                    $on:change={(value) => ctx.emits.configChange({ ...props.config, userName: value || undefined})}
+                    $slot:label="Your Name"
                 />
                 <TextInput
-                    value={config?.model}
-                    placeholder="gpt-4o-mini"
-                    $on:change={(value) => setConfig({ ...config, model: value || undefined})}
-                    $slot:label="Model Name"
-                />
-                <TextInput
-                    value={config?.token}
+                    value={props.config.token}
                     placeholder={"sk-proj-...."}
-                    $on:change={(value) => setConfig({ ...config, token: value || undefined})}
-                    $slot:label="Token"
+                    $on:change={(value) => ctx.emits.configChange({ ...props.config, token: value || undefined})}
+                    $slot:label="OpenAI Token"
                 />
                 <Button
                     $on:click={() => ctx.emits.close()}

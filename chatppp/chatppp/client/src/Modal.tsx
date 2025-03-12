@@ -1,6 +1,7 @@
 import { F } from "@effectualjs/core";
 import "./Modal.css";
 import { Icon } from "./Icon.js";
+import { cls } from "./utils.js";
 
 export interface Props {
     open: boolean;
@@ -26,7 +27,7 @@ export const Modal = (props: Props, ctx: Ctx) => {
 
     return (
         <portal element={document.getElementById("modal-root")}>
-            <div class="modal-container">
+            <div class={cls("modal-container", props.open && "open")}>
                 <div class="modal-backdrop" $on:click={close} />
                 <div class="modal-inner">
                     <div class="modal-header">

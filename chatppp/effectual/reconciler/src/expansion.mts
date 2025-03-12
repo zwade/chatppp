@@ -254,15 +254,21 @@ const expandClean = (element: ExpansionEntry, context: Context): ExpansionEntry 
 
         const newStack: LexicalScope[] = [{ element: element.element, clean: true }, ...context.lexicalScopeStack];
 
+        pushCurrentStateContext(element.identity);
+
+        const children = element.result.map(([key, child]): [string, ExpansionEntry] => {
+            const newContext: Context = { lexicalScopeStack: newStack, previousRoot: child };
+            return [key, expandClean(child, newContext)];
+        });
+
+        popCurrentStateContext();
+
         return {
             kind: "child",
             element: element.element,
             memoKey: element.memoKey,
             identity: element.identity,
-            result: element.result.map(([key, child]) => {
-                const newContext: Context = { lexicalScopeStack: newStack, previousRoot: child };
-                return [key, expandClean(child, newContext)];
-            }),
+            result: children,
         };
     }
 
@@ -429,7 +435,10 @@ const expandDirty = (currentRoot: SingletonElement, context: Context): Expansion
             result: reconciledChildren.map(([key, child, extantChild]) => {
                 if (__DEV__) {
                     if (contextWasClean) {
-                        __ASSERT__(extantChild !== undefined, "A clean context should not be able to rewire children");
+                        __ASSERT__(
+                            extantChild !== undefined || child === undefined,
+                            "A clean context should not be able to rewire children",
+                        );
                     }
                 }
 

@@ -1,4 +1,4 @@
-import { $effect, $state, $watch, Store } from "@effectualjs/reconciler";
+import { $effect, $state, $watch, AssignableStore, Store } from "@effectualjs/reconciler";
 import { progressChat } from "./Api.js";
 
 export type StateData<T> = [value: T, setValue: (data: T) => void];
@@ -15,27 +15,50 @@ export type Conversation = {
 }
 
 export type ModelConfig = {
-    endpoint?: string;
-    model?: string;
+    userName: string;
     token: string;
 }
 
-const Conversation = new Store<Conversation>({ name: "<unknown>", messages: [] });
+const Conversations = new AssignableStore<Conversation[]>([
+    { name: "Sheriff Fenomena", messages: [] },
+    { name: "Big Bad Billy", messages: [] },
+    { name: "Doc Slinger", messages: [] },
+]);
+const ActiveConversation = new Store(0);
 
-export const $provideMessageLog = (name: string, config: ModelConfig) => {
-    const conversation = Conversation.$provide();
+export const $provideMessageLog = () => {
+    const conversations = Conversations.$provide();
+    const activeConversationIdx = ActiveConversation.$provide();
 
-    $watch((name) => {
-        if (name !== conversation.value.name) {
-            conversation.set(({ messages }) => ({ name, messages }));
+    return {
+        conversations: conversations.value,
+        activeConversation: activeConversationIdx.value,
+        setIndex: (idx: number) => {
+            activeConversationIdx.setValue(idx);
         }
-    }, [name]);
+    }
+}
+
+export const $useMessageLog = (config: Partial<ModelConfig>) => {
+    const [conversations, setConversations] = Conversations.$use();
+    const activeConversationIdx = ActiveConversation.$use();
+
+    const conversation = conversations[activeConversationIdx];
+    const setConversation = (idx: number, conversation: Conversation) => {
+        const updatedConversations = [
+            ...conversations.slice(0, activeConversationIdx),
+            conversation,
+            ...conversations.slice(activeConversationIdx + 1)
+        ]
+
+        setConversations(updatedConversations)
+    };
 
     const sendMessage = (message: string) => {
         const updatedConversation: Conversation = {
-            name: conversation.value.name,
+            name: conversation.name,
             messages: [
-                ...conversation.value.messages,
+                ...conversation.messages,
                 {
                     body: message,
                     timestamp: new Date().toISOString(),
@@ -44,31 +67,30 @@ export const $provideMessageLog = (name: string, config: ModelConfig) => {
             ]
         }
 
-        conversation.setValue(updatedConversation);
+        setConversation(activeConversationIdx, updatedConversation);
         progressChat(updatedConversation, config).then((updatedConversation) => {
-            conversation.setValue(updatedConversation);
+            setConversation(activeConversationIdx, updatedConversation);
         });
     }
 
     return {
-        messages: conversation.value,
-        sendMessage
+        messages: conversations[activeConversationIdx].messages,
+        name: conversations[activeConversationIdx].name,
+        sendMessage,
     };
 }
 
 export function $localStorage<T,>(key: string): StateData<T | undefined>;
 export function $localStorage<T,>(key: string, defaultValue: T): StateData<T>;
 export function $localStorage<T,>(key: string, defaultValue?: T): StateData<T | undefined> {
-    const store = $state<T | undefined>(defaultValue);
+    let qualifiedDefault = defaultValue;
+    if (localStorage.getItem(key)) {
+        qualifiedDefault = JSON.parse(localStorage.getItem(key)!);
+    }
+
+    const store = $state<T | undefined>(qualifiedDefault);
 
     $effect(function*() {
-        if (localStorage.getItem(key)) {
-            // TODO: Make dirtySet generational so i don't need to do this
-            setTimeout(() => {
-                store.setValue(JSON.parse(localStorage.getItem(key)!));
-            }, 1);
-        }
-
         const callback = (e: StorageEvent) => {
             if (e.key !== key) {
                 return;
@@ -94,4 +116,53 @@ export function $localStorage<T,>(key: string, defaultValue?: T): StateData<T | 
     }
 
     return [store.value, onChange] as StateData<T | undefined>;
+}
+
+const Hash = Store.create<string>();
+export const $hashState = () => {
+    const hash = Hash.$provide();
+    $effect(function* () {
+        const cb = () => {
+            hash.setValue(location.hash);
+        };
+
+        window.addEventListener("hashchange", cb);
+        yield;
+
+        window.removeEventListener("hashchange", cb);
+    });
+
+    return hash.value;
+};
+
+const RouterStore = new AssignableStore<string>(window.location.pathname);
+export const $provideRouter = () => {
+    const router = RouterStore.$provide();
+    $effect(function*() {
+        const callback = () => {
+            router.setValue(window.location.pathname);
+        }
+
+        window.addEventListener("popstate", callback);
+        yield;
+
+        window.removeEventListener("popstate", callback);
+    });
+
+    return router.value;
+}
+
+export const $useRoute = () => {
+    const [route] = RouterStore.$use();
+
+    return route;
+}
+
+export const $useRouter = () => {
+    const [_route, setRoute] = RouterStore.$use();
+
+    return (route: string) => {
+        history.pushState({}, "", route);
+        setRoute(route);
+    }
 }

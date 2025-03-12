@@ -1,8 +1,9 @@
 import { F } from "@effectualjs/core";
 import "./Button.css";
+import { cls } from "./utils.js";
 
 export interface Props {
-
+    class?: string;
 }
 
 export interface Ctx {
@@ -14,7 +15,7 @@ export interface Ctx {
 export const Button = (props: Props, ctx: Ctx) => {
     return (
         <button
-            class="button"
+            class={cls("button", props.class)}
             $on:click={ctx.emits.click}
         >
             <slot/>

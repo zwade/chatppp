@@ -1,5 +1,0 @@
-{
-    "name": "effectual",
-    "main": "dist/bundle.js",
-    "type": "module"
-}
