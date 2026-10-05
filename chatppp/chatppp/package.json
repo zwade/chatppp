@@ -1,6 +1,5 @@
 {
   "name": "chatppp",
-  "packageManager": "yarn@3.8.1",
   "devDependencies": {
     "typescript": "^5.8.2"
   },
@@ -12,5 +11,6 @@
     "@effectualjs/core": "portal:../effectual/core",
     "@effectualjs/reconciler": "portal:../effectual/reconciler",
     "@effectualjs/utils": "portal:../effectual/utils"
-  }
+  },
+  "packageManager": "yarn@3.8.1"
 }
